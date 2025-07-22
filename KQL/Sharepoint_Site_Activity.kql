@@ -1,0 +1,4 @@
+OfficeActivity
+| where RecordType contains "SharePoint"
+| where Site_Url startswith "" //Input full sharepoint url
+//| summarize count() by SourceRelativeUrl
