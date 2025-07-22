@@ -1,0 +1,5 @@
+DeviceEvents
+| where ActionType has_any ("AntivirusScan", "AntivirusScanCompleted", "AntivirusScanCancelled", "Antivirus")
+| extend AdditionalFields = parse_json(AdditionalFields)
+| extend ScanType = AdditionalFields["ScanTypeIndex"], StartedBy = AdditionalFields["User"]
+| project Timestamp, DeviceId, DeviceName, ActionType, ScanType, StartedBy
