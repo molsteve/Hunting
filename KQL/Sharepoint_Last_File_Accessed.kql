@@ -1,0 +1,6 @@
+OfficeActivity
+| where RecordType contains "SharePoint"
+| where Site_Url startswith "" //TLD Sharepoint URL
+| extend LastSegment = tostring(split(OfficeObjectId, "/")[array_length(split(OfficeObjectId, "/")) - 1])
+| where LastSegment != "AllItems.aspx"
+| summarize Count = count() by LastSegment
