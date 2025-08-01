@@ -1,0 +1,7 @@
+DeviceProcessEvents
+| where Timestamp > ago(1d)
+| where InitiatingProcessFileName =~ "spoolsv.exe"
+| where FileName in~ ("powershell.exe", "cmd.exe", "rundll32.exe", "regsvr32.exe", "mshta.exe", "wscript.exe", "cscript.exe", "svchost.exe", "explorer.exe")
+    or FileName endswith ".exe" // catch custom binaries
+| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessAccountName, InitiatingProcessCommandLine, ReportId
+| order by Timestamp desc
