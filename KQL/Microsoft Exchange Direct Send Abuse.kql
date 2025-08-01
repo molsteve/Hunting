@@ -1,0 +1,30 @@
+let country_land_codes = (
+    externaldata (Country:string,Alpha2:string,Alpha3:string,CountryCode:string,Iso3166:string,Region:string,SubRegion:string,IntermediateRegion:string,RegionCode:string,SubRegionCode:string,IntermediateRegionCode:string) 
+    ['https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/refs/heads/master/all/all.csv'] with (format='csv', ignoreFirstRecord=true)
+    | distinct Country, Alpha2
+);
+let login_locations = (
+    SigninLogs
+    | where TimeGenerated > ago(7d)
+    | where ResultSignature == 0
+    | distinct UserId, UserPrincipalName, LandCode = tostring(LocationDetails.countryOrRegion)
+    | where isnotempty(LandCode)
+    | join kind=inner country_land_codes on $left.LandCode == $right.Alpha2
+    | summarize UsageCountries = make_set(Country) by UserId, UserPrincipalName
+);
+EmailEvents
+| where TimeGenerated > ago(30d)
+// Find Direct Send mails
+| where SenderMailFromAddress == RecipientEmailAddress
+| extend AuthenticationDetails = parse_json(AuthenticationDetails)
+| where AuthenticationDetails.SPF == "fail" and AuthenticationDetails.DMARC == "fail"
+// Only flag mails not comming in via an exchange connector (these are legit mails)
+| where isempty(Connectors)
+// Exclude if detected as phish (since it is already remediated then)
+| where DeliveryAction !in ("Junked", "Blocked")
+| extend Location = parse_json(geo_info_from_ip_address(SenderIPv4))
+| extend MailFromCountry = tostring(Location.country)
+// Find the usage countries of the users
+| join kind=leftouter login_locations on $left.SenderObjectId == $right.UserId
+// Flag when sender country is not a usage country of the user
+| where tostring(UsageCountries) !contains MailFromCountry
