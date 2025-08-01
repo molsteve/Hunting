@@ -1,5 +1,9 @@
-// Detect spoolsv.exe making network connections
 DeviceNetworkEvents
-| where Timestamp > ago(7d)
+| where Timestamp > ago(1d)
 | where InitiatingProcessFileName =~ "spoolsv.exe"
+//| where RemoteUrl !in ("printers-syd", "printers-us", "printers-lon", "", "10.65.82.40", "hsk-prt-w03v-p", "hsk-pss-w03v-p")
+| where not (RemoteUrl has_any ("syd", "hsk", "gla", "nje", "lon", "us", "wdc", "man", "lei", "eil", "prt"))
+| where RemoteUrl != ""
+| where RemoteUrl !startswith "http://10."
 | project Timestamp, DeviceName, RemoteUrl, RemoteIP, InitiatingProcessAccountName, InitiatingProcessCommandLine, ReportId
+| summarize by DeviceName, RemoteUrl
