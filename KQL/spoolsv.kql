@@ -1,0 +1,5 @@
+// Detect spoolsv.exe making network connections
+DeviceNetworkEvents
+| where Timestamp > ago(7d)
+| where InitiatingProcessFileName =~ "spoolsv.exe"
+| project Timestamp, DeviceName, RemoteUrl, RemoteIP, InitiatingProcessAccountName, InitiatingProcessCommandLine, ReportId
